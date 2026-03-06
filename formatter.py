@@ -49,6 +49,8 @@ def write_export(messages: list[dict], output_path: str, me: str, other: str) ->
       - 'text': str
     """
     lines = []
+    current_date: Optional[str] = None
+
     for msg in messages:
         raw_sender = msg.get("sender", "")
         if raw_sender == "me":
@@ -56,20 +58,35 @@ def write_export(messages: list[dict], output_path: str, me: str, other: str) ->
         elif raw_sender == "other":
             sender_label = other
         else:
-            # Raw name already provided
             sender_label = raw_sender or "Unknown"
 
-        ts = format_timestamp(msg.get("timestamp"))
+        raw_ts = msg.get("timestamp")
+        ts = format_timestamp(raw_ts) if raw_ts else None
+
+        # Determine what to use as the "date" portion for deduplication.
+        # For date-only stamps (no time component), ts == the date string itself.
+        # For full datetime stamps, extract just the date part (before the comma).
+        date_part = ts.split(",")[0].strip() if ts else None
+
+        # Emit a date header only when the date changes
+        if date_part and date_part != current_date:
+            if lines:
+                lines.append("")  # blank line before new section
+            lines.append(f"--- {date_part} ---")
+            current_date = date_part
+
         text = msg.get("text", "").strip()
         if not text:
             text = "[Media]"
 
+        # Include time only when it's available (full datetime, not date-only)
+        has_time = ts and "," in ts
+        prefix = f"[{ts.split(', ')[1]}] {sender_label}: " if has_time else f"{sender_label}: "
+
         # Handle multi-line messages: indent continuation lines
         text_lines = text.splitlines()
-        first_line = f"[{ts}] {sender_label}: {text_lines[0]}"
-        rest_lines = [f"  {l}" for l in text_lines[1:]]
-        lines.append(first_line)
-        lines.extend(rest_lines)
+        lines.append(f"{prefix}{text_lines[0]}")
+        lines.extend(f"  {l}" for l in text_lines[1:])
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

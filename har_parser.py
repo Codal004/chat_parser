@@ -70,9 +70,10 @@ def parse_har(har_path: str, my_user_id: str | None = None) -> list[dict]:
             quoted = msg.get("quoted_message")
             reply_to = quoted.get("text", "").strip() if quoted else None
 
-            reactions = [
-                r.get("type", "") for r in msg.get("latest_reactions", [])
-            ]
+            reaction_counts = msg.get("reaction_counts", {})
+            reactions = []
+            for rtype, count in reaction_counts.items():
+                reactions.extend([rtype] * count)
 
             messages.append(
                 {

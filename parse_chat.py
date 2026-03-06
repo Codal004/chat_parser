@@ -3,14 +3,17 @@
 parse_chat.py — PDB chat export parser
 
 Usage:
-  # From saved HTML (recommended):
+  # From HAR file (Network > Save all as HAR):
+  python parse_chat.py --har archive.har --me "YourName" --other "TheirName"
+
+  # From saved HTML (File > Save Page As):
   python parse_chat.py --html chat.html --me "YourName" --other "TheirName"
 
   # From DevTools JSON response:
   python parse_chat.py --json messages.json --me "YourName" --other "TheirName"
 
   # Output to a specific file (default: chat_export.txt):
-  python parse_chat.py --html chat.html --out my_chat.txt
+  python parse_chat.py --har archive.har --out my_chat.txt
 """
 import argparse
 import sys
@@ -24,6 +27,7 @@ def main():
     )
 
     source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--har", metavar="FILE", help="HAR archive (Network tab > Save all as HAR)")
     source.add_argument("--html", metavar="FILE", help="Saved HTML file (File > Save Page As)")
     source.add_argument("--json", metavar="FILE", help="DevTools JSON response file")
 
@@ -33,7 +37,10 @@ def main():
 
     args = parser.parse_args()
 
-    if args.html:
+    if args.har:
+        from har_parser import parse_har
+        messages = parse_har(args.har)
+    elif args.html:
         from html_parser import parse_html
         messages = parse_html(args.html)
     else:

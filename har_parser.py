@@ -10,6 +10,17 @@ import base64
 import json
 
 
+_REACTION_EMOJI: dict[str, str] = {
+    "like":   "🧡",
+    "cry":    "😭",
+    "tears":  "🥺",
+    "lol":    "😂",
+    "fire":   "🔥",
+    "sigh":   "😮‍💨",
+    "thank":  "🙏",
+}
+
+
 def parse_har(har_path: str, my_user_id: str | None = None) -> list[dict]:
     """
     Parse a HAR file and return messages sorted by timestamp.
@@ -73,7 +84,8 @@ def parse_har(har_path: str, my_user_id: str | None = None) -> list[dict]:
             reaction_counts = msg.get("reaction_counts", {})
             reactions = []
             for rtype, count in reaction_counts.items():
-                reactions.extend([rtype] * count)
+                emoji = _REACTION_EMOJI.get(rtype, rtype)
+                reactions.extend([emoji] * count)
 
             messages.append(
                 {

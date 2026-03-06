@@ -105,6 +105,37 @@ def _has_media(item) -> bool:
     return False
 
 
+def extract_reactions(filepath: str) -> dict[str, list[str]]:
+    """
+    Return a dict mapping normalised message body text → list of reaction emojis.
+    Used to enrich HAR-parsed messages with reactions visible in the saved HTML.
+    """
+    with open(filepath, encoding="utf-8", errors="replace") as f:
+        soup = BeautifulSoup(f, "lxml")
+
+    result: dict[str, list[str]] = {}
+    msg_list = soup.find(class_="message-list")
+    if not msg_list:
+        return result
+
+    for li in msg_list.find_all("li", recursive=False):
+        if "message-item" not in (li.get("class") or []):
+            continue
+
+        emojis = [el.get_text(strip=True) for el in li.find_all(class_="reaction-icon")]
+        if not emojis:
+            continue
+
+        body = _extract_text(li).strip()
+        if not body:
+            continue
+
+        key = " ".join(body.lower().split())
+        result[key] = emojis
+
+    return result
+
+
 def parse_html(filepath: str) -> list[dict]:
     """
     Parse a PDB chat HTML export and return a list of message dicts:

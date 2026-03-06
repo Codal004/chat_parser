@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--me", default="You", metavar="NAME", help="Your display name (default: You)")
     parser.add_argument("--other", default="Them", metavar="NAME", help="Other person's display name (default: Them)")
     parser.add_argument("--out", default="chat_export.txt", metavar="FILE", help="Output file (default: chat_export.txt)")
+    parser.add_argument("--enrich", metavar="HTML_FILE", help="Saved HTML file to pull missing reactions from")
 
     args = parser.parse_args()
 
@@ -50,6 +51,17 @@ def main():
     if not messages:
         print("No messages found. Check the input file and try again.", file=sys.stderr)
         sys.exit(1)
+
+    if args.enrich:
+        from html_parser import extract_reactions
+        reaction_map = extract_reactions(args.enrich)
+        enriched = 0
+        for msg in messages:
+            key = " ".join(msg.get("text", "").lower().split())
+            if key in reaction_map:
+                msg["reactions"] = reaction_map[key]
+                enriched += 1
+        print(f"Enriched {enriched} messages with reactions from HTML.", file=sys.stderr)
 
     from formatter import write_export
     write_export(messages, args.out, me=args.me, other=args.other)

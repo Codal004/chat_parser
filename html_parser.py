@@ -60,6 +60,11 @@ def _extract_text(item) -> str:
     # Also remove the tools div
     for t in container_copy.find_all(class_="tools"):
         t.decompose()
+    # Remove reaction icons so they don't bleed into the message text
+    for r in container_copy.find_all(class_="reaction-icon"):
+        r.decompose()
+    for r in container_copy.find_all(class_="reactions"):
+        r.decompose()
 
     # Primary text label
     text_label = container_copy.find(class_="text")

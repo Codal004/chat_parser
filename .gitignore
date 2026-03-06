@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+*.html
+chat_export*.txt
+Desktop/

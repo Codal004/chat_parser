@@ -79,6 +79,14 @@ def write_export(messages: list[dict], output_path: str, me: str, other: str) ->
         if not text:
             text = "[Media]"
 
+        reply_to = msg.get("reply_to", "").strip() if msg.get("reply_to") else None
+        if reply_to:
+            # Truncate long quoted text
+            quote = reply_to if len(reply_to) <= 60 else reply_to[:57] + "…"
+            text = f'↩ "{quote}" — {text}'
+
+        reactions = msg.get("reactions") or []
+
         # Include time only when it's available (full datetime, not date-only)
         has_time = ts and "," in ts
         prefix = f"[{ts.split(', ')[1]}] {sender_label}: " if has_time else f"{sender_label}: "
@@ -87,6 +95,9 @@ def write_export(messages: list[dict], output_path: str, me: str, other: str) ->
         text_lines = text.splitlines()
         lines.append(f"{prefix}{text_lines[0]}")
         lines.extend(f"  {l}" for l in text_lines[1:])
+
+        if reactions:
+            lines.append(f"  [{' '.join(reactions)}]")
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

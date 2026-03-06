@@ -67,11 +67,20 @@ def parse_har(har_path: str, my_user_id: str | None = None) -> list[dict]:
             sender_id = msg.get("user", {}).get("id", "")
             sender = "me" if sender_id == my_user_id else "other"
 
+            quoted = msg.get("quoted_message")
+            reply_to = quoted.get("text", "").strip() if quoted else None
+
+            reactions = [
+                r.get("type", "") for r in msg.get("latest_reactions", [])
+            ]
+
             messages.append(
                 {
                     "sender": sender,
                     "timestamp": msg.get("created_at"),
                     "text": msg.get("text", "").strip(),
+                    "reply_to": reply_to,
+                    "reactions": reactions,
                 }
             )
 
